@@ -2,8 +2,10 @@ package cs276.pa4;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 
 public class Query implements Comparable<Query>{
 	String query;
@@ -29,4 +31,21 @@ public class Query implements Comparable<Query>{
 	public String toString() {
 	  return query;
 	}
+	
+	// Handle the query vector
+		public Map<String,Double> getQueryFreqs() {
+			Map<String,Double> tfQuery = new HashMap<String, Double>(); // queryWord -> term frequency
+			for (String term : this.words) {
+				if (tfQuery.containsKey(term)) {
+					tfQuery.put(term, tfQuery.get(term)+1.0);
+				} else {
+					tfQuery.put(term, 1.0);
+				}
+			}
+			// Sublinear scaling
+			for (String term : tfQuery.keySet()) {
+				tfQuery.put(term, Math.log(tfQuery.get(term)) + 1.0);
+			}
+			return tfQuery;
+		}
 }
