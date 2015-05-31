@@ -51,7 +51,7 @@ public class Document {
 			tfsAnchor.put(term, 0.0);
 		}
 		if (this.url != null) {
-			for (String term : this.url.toLowerCase().split("\\s+")) {
+			for (String term : this.url.toLowerCase().split("\\.")) {
 				if (!terms.contains(term)) continue;
 				tfsUrl.put(term, tfsUrl.get(term)+1.0);
 			}

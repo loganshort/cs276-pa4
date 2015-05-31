@@ -42,11 +42,6 @@ public class Query implements Comparable<Query>{
 					tfQuery.put(term, 1.0);
 				}
 			}
-			// Sublinear scaling
-			for (String term : tfQuery.keySet()) {
-				if (tfQuery.get(term) != 1.0) System.out.println(tfQuery.get(term));
-				tfQuery.put(term, Math.log(tfQuery.get(term)) + 1.0);
-			}
 			return tfQuery;
 		}
 }

@@ -63,10 +63,10 @@ public class PointwiseLearner extends Learner {
 		attributes.add(new Attribute("body_w"));
 		attributes.add(new Attribute("header_w"));
 		attributes.add(new Attribute("anchor_w"));
-		attributes.add(new Attribute("relevance_score"));
 		attributes.add(new Attribute("bm25_w"));
-		attributes.add(new Attribute("pr"));
-		attributes.add(new Attribute("window"));
+		attributes.add(new Attribute("pr_w"));
+		attributes.add(new Attribute("window_w"));
+		attributes.add(new Attribute("relevance_score"));
 		
 		dataset = new Instances("train_dataset", attributes, 0);
 		
@@ -144,10 +144,10 @@ public class PointwiseLearner extends Learner {
 		attributes.add(new Attribute("body_w"));
 		attributes.add(new Attribute("header_w"));
 		attributes.add(new Attribute("anchor_w"));
-		attributes.add(new Attribute("relevance_score"));
 		attributes.add(new Attribute("bm25_w"));
 		attributes.add(new Attribute("pr"));
 		attributes.add(new Attribute("window"));
+		attributes.add(new Attribute("relevance_score"));
 		dataset = new Instances("test_dataset", attributes, 0);
 		
 		int index = 0;
@@ -191,9 +191,6 @@ public class PointwiseLearner extends Learner {
 	public Map<String, List<String>> testing(TestFeatures tf,
 			Classifier model) {
 		double eta = 0.000000001;
-		for (int i = 0; i < 10; i++) {
-			System.out.println(((LinearRegression) model).coefficients()[i]);
-		}
 		Map<String, List<String>> ranked_queries = new HashMap<String, List<String>>();
 		Instances test_dataset = tf.features;
 		Map<String, Map<String, Integer>> index_map = tf.index_map;
