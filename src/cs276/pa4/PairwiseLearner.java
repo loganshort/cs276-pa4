@@ -21,6 +21,7 @@ import weka.filters.unsupervised.attribute.Standardize;
 public class PairwiseLearner extends Learner {
   private LibSVM model;
   private static final Map<String, Integer> FIELD_MAP;
+  private boolean bm25, pr, window;
   static {
       Map<String, Integer> map = new HashMap<String, Integer>();
       map.put("url", 0);
@@ -30,25 +31,29 @@ public class PairwiseLearner extends Learner {
       map.put("anchor", 4);
       FIELD_MAP = Collections.unmodifiableMap(map);
   }
-  public PairwiseLearner(boolean isLinearKernel){
+  public PairwiseLearner(boolean isLinearKernel, boolean bm25, boolean pr, boolean window){
     try{
       model = new LibSVM();
     } catch (Exception e){
       e.printStackTrace();
     }
-    
+    this.bm25 = bm25;
+	this.pr = pr;
+	this.window = window;
     if(isLinearKernel){
       model.setKernelType(new SelectedTag(LibSVM.KERNELTYPE_LINEAR, LibSVM.TAGS_KERNELTYPE));
     }
   }
   
-  public PairwiseLearner(double C, double gamma, boolean isLinearKernel){
+  public PairwiseLearner(double C, double gamma, boolean isLinearKernel, boolean bm25, boolean pr, boolean window){
     try{
       model = new LibSVM();
     } catch (Exception e){
       e.printStackTrace();
     }
-    
+    this.bm25 = bm25;
+	this.pr = pr;
+	this.window = window;
     model.setCost(C);
     model.setGamma(gamma); // only matter for RBF kernel
     if(isLinearKernel){
@@ -72,11 +77,15 @@ public class PairwiseLearner extends Learner {
 	public Instances extract_train_features(String train_data_file,
 			String train_rel_file, Map<String, Double> idfs) {
 		Map<Query,List<Document>> train_data; Map<String, Map<String, Double>> rel_data;
+		BM25Scorer bm25_scorer;
+		SmallestWindowScorer window_scorer;
 		try {
 			/* query -> documents */
 			train_data = Util.loadTrainData(train_data_file);
 			/* query -> (url -> score) */
 			rel_data = Util.loadRelData(train_rel_file);
+			bm25_scorer = new BM25Scorer(idfs, train_data);
+			window_scorer = new SmallestWindowScorer(idfs);
 		} catch (Exception e) {
 			System.err.println("Error while loading training data: " + e);
 			return null;
@@ -91,6 +100,9 @@ public class PairwiseLearner extends Learner {
 		attributes.add(new Attribute("body_w"));
 		attributes.add(new Attribute("header_w"));
 		attributes.add(new Attribute("anchor_w"));
+		attributes.add(new Attribute("bm25_w"));
+		attributes.add(new Attribute("pr"));
+		attributes.add(new Attribute("window"));
 		ArrayList<String> labels = new ArrayList<String>();
 		labels.add("greater");
 		labels.add("lesser");
@@ -100,7 +112,7 @@ public class PairwiseLearner extends Learner {
 		for (Query query : train_data.keySet()) {
 			Map<String,Double> query_tfs = query.getQueryFreqs();
 			for (Document doc : train_data.get(query)) {	
-				double[] instance = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+				double[] instance = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 				Map<String,Map<String, Double>> tfs = doc.getDocTermFreqs(query);
 				for (String field : tfs.keySet()) {
 					double score = 0;
@@ -112,6 +124,9 @@ public class PairwiseLearner extends Learner {
 					}
 					instance[FIELD_MAP.get(field)] = score;
 				}
+				if (bm25) instance[5] = bm25_scorer.getSimScore(doc, query);
+				if (window) instance[6] = window_scorer.getSimScore(doc, query);
+				if (pr) instance[7] = doc.page_rank;
 				instance[dataset.numAttributes() - 1] = rel_data.get(query.toString()).get(doc.url);
 				Instance inst = new DenseInstance(1.0, instance);
 				dataset.add(inst);
@@ -121,20 +136,20 @@ public class PairwiseLearner extends Learner {
 			boolean current = true;
 			for (int i = 0; i < dataset.size(); i++) {
 				for (int j = i+1; j < dataset.size(); j++) {
-					double[] diff = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+					double[] diff = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 					if (dataset.get(i).equals(dataset.get(j))) continue;
 					if (current) {
-						diff[5] = 0;
+						diff[8] = 0;
 					} else {
-						diff[5] = 1;
+						diff[8] = 1;
 					}
-					if (diff[5] == 0 && dataset.get(i).value(5) >= dataset.get(j).value(5) ||
-						diff[5] == 1 && dataset.get(i).value(5) < dataset.get(j).value(5)) {
-						for (int k = 0; k < 5; k++) {
+					if (diff[8] == 0 && dataset.get(i).value(8) >= dataset.get(j).value(8) ||
+						diff[8] == 1 && dataset.get(i).value(8) < dataset.get(j).value(8)) {
+						for (int k = 0; k < 8; k++) {
 							diff[k] = dataset.get(i).value(k) - dataset.get(j).value(k);
 						}
 					} else {
-						for (int k = 0; k < 5; k++) {
+						for (int k = 0; k < 8; k++) {
 							diff[k] = dataset.get(j).value(k) - dataset.get(i).value(k);
 						}
 					}
@@ -164,7 +179,7 @@ public class PairwiseLearner extends Learner {
 	@Override
 	public TestFeatures extract_test_features(String test_data_file,
 			Map<String, Double> idfs) {
-		Learner learner = new PointwiseLearner();
+		Learner learner = new PointwiseLearner(false, false, false);
 		TestFeatures test_features = learner.extract_test_features(test_data_file, idfs);
 		test_features.features = standardization(test_features.features);
 		return test_features;
@@ -183,6 +198,9 @@ public class PairwiseLearner extends Learner {
 		attributes.add(new Attribute("body_w"));
 		attributes.add(new Attribute("header_w"));
 		attributes.add(new Attribute("anchor_w"));
+		attributes.add(new Attribute("bm25_w"));
+		attributes.add(new Attribute("pr"));
+		attributes.add(new Attribute("window"));
 		ArrayList<String> labels = new ArrayList<String>();
 		labels.add("greater");
 		labels.add("lesser");
@@ -199,13 +217,13 @@ public class PairwiseLearner extends Learner {
 						if (doc1.equals(doc2)) continue;
 						int index2 = index_map.get(query).get(doc2);
 						Instance i2 = test_dataset.instance(index2);
-						double[] diff = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-						for (int i = 0; i < 5; i++) {
+						double[] diff = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};;
+						for (int i = 0; i < 8; i++) {
 							diff[i] = i1.value(i) - i2.value(i);
 						}
 						Instance diff_inst = new DenseInstance(1.0, diff);
 						Instances data = new Instances("comp_dataset", attributes, 0);
-						data.setClassIndex(5);
+						data.setClassIndex(8);
 						diff_inst.setDataset(data);
 						if (model.classifyInstance(diff_inst) == 0) rank--;
 					}
