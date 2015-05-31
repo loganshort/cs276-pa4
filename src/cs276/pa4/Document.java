@@ -53,6 +53,7 @@ public class Document {
 		if (this.url != null) {
 			for (String term : this.url.toLowerCase().replaceAll("[^A-Za-z0-9]", " ").split(" ")) {
 				if (!terms.contains(term)) continue;
+				if (!tfsUrl.containsKey(term)) tfsUrl.put(term, 0.0);
 				tfsUrl.put(term, tfsUrl.get(term)+1.0);
 			}
 		}

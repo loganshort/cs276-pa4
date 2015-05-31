@@ -72,11 +72,10 @@ public class PointwiseLearner extends Learner {
 		attributes.add(new Attribute("pr_w"));
 		attributes.add(new Attribute("window_w"));
 		attributes.add(new Attribute("pdf_w"));
-		attributes.add(new Attribute("edu_w"));
+		attributes.add(new Attribute("slashes_w"));
 		attributes.add(new Attribute("relevance_score"));
 		
 		dataset = new Instances("train_dataset", attributes, 0);
-		
 		for (Query query : train_data.keySet()) {
 			Map<String,Double> query_tfs = query.getQueryFreqs();
 			for (Document doc : train_data.get(query)) {	
@@ -99,7 +98,7 @@ public class PointwiseLearner extends Learner {
 				if (window) instance[7] = window_scorer.getSimScore(doc, query);
 				if (extras) {
 					if (tfs.get("url").get("pdf") != null) instance[8] = 1.0;
-					if (tfs.get("url").get("edu") != null) instance[9] = 1.0;
+					instance[9] = doc.url.split("/").length;
 				}
 				instance[dataset.numAttributes() - 1] = rel_data.get(query.toString()).get(doc.url);
 				Instance inst = new DenseInstance(1.0, instance);
@@ -162,7 +161,7 @@ public class PointwiseLearner extends Learner {
 		attributes.add(new Attribute("pr_w"));
 		attributes.add(new Attribute("window_w"));
 		attributes.add(new Attribute("pdf_w"));
-		attributes.add(new Attribute("edu_w"));
+		attributes.add(new Attribute("slashes_w"));
 		attributes.add(new Attribute("relevance_score"));
 		dataset = new Instances("test_dataset", attributes, 0);
 		
@@ -190,7 +189,7 @@ public class PointwiseLearner extends Learner {
 				if (window) instance[7] = window_scorer.getSimScore(doc, query);
 				if (extras) {
 					if (tfs.get("url").get("pdf") != null) instance[8] = 1.0;
-					if (tfs.get("url").get("edu") != null) instance[9] = 1.0;
+					instance[9] = doc.url.split("/").length;
 				}
 				Instance inst = new DenseInstance(1.0, instance);
 				dataset.add(inst);
@@ -201,7 +200,6 @@ public class PointwiseLearner extends Learner {
 		
 		/* Set last attribute as target */
 		dataset.setClassIndex(dataset.numAttributes() - 1);
-		
 		TestFeatures test_features = new TestFeatures();
 		test_features.features = dataset;
 		test_features.index_map = index_map;
@@ -212,7 +210,6 @@ public class PointwiseLearner extends Learner {
 	@Override
 	public Map<String, List<String>> testing(TestFeatures tf,
 			Classifier model) {
-		System.out.println(model);
 		double eta = 0.0000000001;
 		Map<String, List<String>> ranked_queries = new HashMap<String, List<String>>();
 		Instances test_dataset = tf.features;

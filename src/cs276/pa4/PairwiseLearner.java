@@ -106,7 +106,7 @@ public class PairwiseLearner extends Learner {
 		attributes.add(new Attribute("pr_w"));
 		attributes.add(new Attribute("window_w"));
 		attributes.add(new Attribute("pdf_w"));
-		attributes.add(new Attribute("edu_w"));
+		attributes.add(new Attribute("slashes_w"));
 		ArrayList<String> labels = new ArrayList<String>();
 		labels.add("greater");
 		labels.add("lesser");
@@ -208,7 +208,7 @@ public class PairwiseLearner extends Learner {
 		attributes.add(new Attribute("pr_w"));
 		attributes.add(new Attribute("window_w"));
 		attributes.add(new Attribute("pdf_w"));
-		attributes.add(new Attribute("edu_w"));
+		attributes.add(new Attribute("slashes_w"));
 		ArrayList<String> labels = new ArrayList<String>();
 		labels.add("greater");
 		labels.add("lesser");
