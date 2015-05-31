@@ -173,7 +173,6 @@ public class PairwiseLearner extends Learner {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		System.out.println(dataset.toSummaryString());
 		return model;
 	}
 
