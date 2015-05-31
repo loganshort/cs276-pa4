@@ -68,7 +68,7 @@ public class SmallestWindowScorer extends CosineSimilarityScorer {
 		return findSmallestWindow(terms, q);
 	}
 	
-	public double getBoost(Document d, Map<String,Double> q) {
+	public double getWindow(Document d, Map<String,Double> q) {
 		double boost = 1.0;
 		int smallest = Integer.MAX_VALUE;
 		if (d.url != null) {
@@ -119,9 +119,7 @@ public class SmallestWindowScorer extends CosineSimilarityScorer {
 				if (current < smallest) smallest = current;
 			}
 		}
-		if (smallest == Integer.MAX_VALUE) return 1;
-		int difference = smallest - q.keySet().size();
-		return 1 + B*Math.pow(difference, boostmod);
+		return smallest;
 	}
 	
 	@Override
@@ -132,9 +130,7 @@ public class SmallestWindowScorer extends CosineSimilarityScorer {
 		
 		Map<String,Double> tfQuery = getQueryFreqs(q);
 		
-		double score = getNetScore(tfs,q,tfQuery,d);
-		double boost = getBoost(d, tfQuery);
-		return score * boost;
+		return getWindow(d, tfQuery);
 	}
 
 }

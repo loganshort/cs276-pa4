@@ -19,7 +19,7 @@ import weka.core.Utils;
 public class PointwiseLearner extends Learner {	
 	private static final int CORPUS_SIZE = 98998;
 	private static final Map<String, Integer> FIELD_MAP;
-	private boolean bm25, pr, window;
+	private boolean bm25, pr, window, extras;
     static {
         Map<String, Integer> map = new HashMap<String, Integer>();
         map.put("url", 0);
@@ -30,10 +30,11 @@ public class PointwiseLearner extends Learner {
         FIELD_MAP = Collections.unmodifiableMap(map);
     }
     
-    public PointwiseLearner(boolean bm25, boolean pr, boolean window) {
+    public PointwiseLearner(boolean bm25, boolean pr, boolean window, boolean extras) {
     	this.bm25 = bm25;
     	this.pr = pr;
     	this.window = window;
+    	this.extras = extras;
     }
 
 	@Override
@@ -70,6 +71,8 @@ public class PointwiseLearner extends Learner {
 		attributes.add(new Attribute("bm25_w"));
 		attributes.add(new Attribute("pr_w"));
 		attributes.add(new Attribute("window_w"));
+		attributes.add(new Attribute("pdf_w"));
+		attributes.add(new Attribute("edu_w"));
 		attributes.add(new Attribute("relevance_score"));
 		
 		dataset = new Instances("train_dataset", attributes, 0);
@@ -77,7 +80,7 @@ public class PointwiseLearner extends Learner {
 		for (Query query : train_data.keySet()) {
 			Map<String,Double> query_tfs = query.getQueryFreqs();
 			for (Document doc : train_data.get(query)) {	
-				double[] instance = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+				double[] instance = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 				Map<String,Map<String, Double>> tfs = doc.getDocTermFreqs(query);
 				for (String field : tfs.keySet()) {
 					double score = 0.0;
@@ -92,8 +95,12 @@ public class PointwiseLearner extends Learner {
 					instance[FIELD_MAP.get(field)] = score;
 				}
 				if (bm25) instance[5] = bm25_scorer.getSimScore(doc, query);
-				//if (window) instance[6] = window_scorer.getSimScore(doc, query);
-				if (pr) instance[7] = doc.page_rank;
+				if (pr) instance[6] = doc.page_rank;
+				if (window) instance[7] = window_scorer.getSimScore(doc, query);
+				if (extras) {
+					if (tfs.get("url").get("pdf") != null) instance[8] = 1.0;
+					if (tfs.get("url").get("edu") != null) instance[9] = 1.0;
+				}
 				instance[dataset.numAttributes() - 1] = rel_data.get(query.toString()).get(doc.url);
 				Instance inst = new DenseInstance(1.0, instance);
 				dataset.add(inst);
@@ -117,7 +124,6 @@ public class PointwiseLearner extends Learner {
 		} catch (Exception e) {
 			System.err.println("Error while training linear regression: " + e);
 		}
-		System.out.println(model);
 		return model;
 	}
 
@@ -153,8 +159,10 @@ public class PointwiseLearner extends Learner {
 		attributes.add(new Attribute("header_w"));
 		attributes.add(new Attribute("anchor_w"));
 		attributes.add(new Attribute("bm25_w"));
-		attributes.add(new Attribute("pr"));
-		attributes.add(new Attribute("window"));
+		attributes.add(new Attribute("pr_w"));
+		attributes.add(new Attribute("window_w"));
+		attributes.add(new Attribute("pdf_w"));
+		attributes.add(new Attribute("edu_w"));
 		attributes.add(new Attribute("relevance_score"));
 		dataset = new Instances("test_dataset", attributes, 0);
 		
@@ -163,7 +171,7 @@ public class PointwiseLearner extends Learner {
 			Map<String,Double> query_tfs = query.getQueryFreqs();
 			index_map.put(query.toString(), new HashMap<String, Integer>());
 			for (Document doc : test_data.get(query)) {	
-				double[] instance = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+				double[] instance = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 				Map<String,Map<String, Double>> tfs = doc.getDocTermFreqs(query);
 				for (String field : tfs.keySet()) {
 					double score = 0;
@@ -178,8 +186,12 @@ public class PointwiseLearner extends Learner {
 					instance[FIELD_MAP.get(field)] = score;
 				}
 				if (bm25) instance[5] = bm25_scorer.getSimScore(doc, query);
-				//if (window) instance[6] = window_scorer.getSimScore(doc, query);
-				if (pr) instance[7] = doc.page_rank;
+				if (pr) instance[6] = doc.page_rank;
+				if (window) instance[7] = window_scorer.getSimScore(doc, query);
+				if (extras) {
+					if (tfs.get("url").get("pdf") != null) instance[8] = 1.0;
+					if (tfs.get("url").get("edu") != null) instance[9] = 1.0;
+				}
 				Instance inst = new DenseInstance(1.0, instance);
 				dataset.add(inst);
 				index_map.get(query.toString()).put(doc.url, index);

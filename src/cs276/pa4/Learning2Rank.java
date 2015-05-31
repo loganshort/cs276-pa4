@@ -22,16 +22,18 @@ public class Learning2Rank {
 	    Learner learner = null;
     
  		if (task == 1) {
-			learner = new PointwiseLearner(false, false, false);
+			learner = new PointwiseLearner(false, false, false, false);
 		} else if (task == 2) {
-		  boolean isLinearKernel = true;
-		  learner = new PairwiseLearner(isLinearKernel, false, false, false);
+		  boolean isLinearKernel = false;
+		  double C = 16;
+		  double gamma = 2e-4;
+		  learner = new PairwiseLearner(C, gamma, isLinearKernel, false, false, false);
 		} else if (task == 3) {
 			
 			/* 
 			 * @TODO: Your code here, add more features 
 			 * */
-			learner = new PointwiseLearner(true, true, true);
+			learner = new PointwiseLearner(true, true, true, true);
 			System.err.println("Task 3");
 			
 		} else if (task == 4) {
@@ -57,16 +59,16 @@ public class Learning2Rank {
 		    Map<String, List<String>> ranked_queries = new HashMap<String, List<String>>();
 		    Learner learner = null;
 	 		if (task == 1) {
-				learner = new PointwiseLearner(false, false, false);
+				learner = new PointwiseLearner(false, false, false, false);
 			} else if (task == 2) {
-			  boolean isLinearKernel = true;
+			  boolean isLinearKernel = false;
 				learner = new PairwiseLearner(isLinearKernel, false, false, false);
 			} else if (task == 3) {
 
 				/* 
 				 * @TODO: Your code here, add more features 
 				 * */
-				learner = new PointwiseLearner(true, true, true);
+				learner = new PointwiseLearner(true, true, true, true);
 				System.err.println("Task 3");
 				
 			} else if (task == 4) {

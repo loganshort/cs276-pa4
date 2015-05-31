@@ -103,8 +103,10 @@ public class PairwiseLearner extends Learner {
 		attributes.add(new Attribute("header_w"));
 		attributes.add(new Attribute("anchor_w"));
 		attributes.add(new Attribute("bm25_w"));
-		attributes.add(new Attribute("pr"));
-		attributes.add(new Attribute("window"));
+		attributes.add(new Attribute("pr_w"));
+		attributes.add(new Attribute("window_w"));
+		attributes.add(new Attribute("pdf_w"));
+		attributes.add(new Attribute("edu_w"));
 		ArrayList<String> labels = new ArrayList<String>();
 		labels.add("greater");
 		labels.add("lesser");
@@ -114,7 +116,7 @@ public class PairwiseLearner extends Learner {
 		for (Query query : train_data.keySet()) {
 			Map<String,Double> query_tfs = query.getQueryFreqs();
 			for (Document doc : train_data.get(query)) {	
-				double[] instance = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+				double[] instance = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 				Map<String,Map<String, Double>> tfs = doc.getDocTermFreqs(query);
 				for (String field : tfs.keySet()) {
 					double score = 0;
@@ -140,20 +142,20 @@ public class PairwiseLearner extends Learner {
 			boolean current = true;
 			for (int i = 0; i < dataset.size(); i++) {
 				for (int j = i+1; j < dataset.size(); j++) {
-					double[] diff = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+					double[] diff = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 					if (dataset.get(i).equals(dataset.get(j))) continue;
 					if (current) {
-						diff[8] = 0;
+						diff[10] = 0;
 					} else {
-						diff[8] = 1;
+						diff[10] = 1;
 					}
-					if (diff[8] == 0 && dataset.get(i).value(8) >= dataset.get(j).value(8) ||
-						diff[8] == 1 && dataset.get(i).value(8) < dataset.get(j).value(8)) {
-						for (int k = 0; k < 8; k++) {
+					if (diff[10] == 0 && dataset.get(i).value(10) >= dataset.get(j).value(10) ||
+						diff[10] == 1 && dataset.get(i).value(10) < dataset.get(j).value(10)) {
+						for (int k = 0; k < 10; k++) {
 							diff[k] = dataset.get(i).value(k) - dataset.get(j).value(k);
 						}
 					} else {
-						for (int k = 0; k < 8; k++) {
+						for (int k = 0; k < 10; k++) {
 							diff[k] = dataset.get(j).value(k) - dataset.get(i).value(k);
 						}
 					}
@@ -183,7 +185,7 @@ public class PairwiseLearner extends Learner {
 	@Override
 	public TestFeatures extract_test_features(String test_data_file,
 			Map<String, Double> idfs) {
-		Learner learner = new PointwiseLearner(false, false, false);
+		Learner learner = new PointwiseLearner(false, false, false, false);
 		TestFeatures test_features = learner.extract_test_features(test_data_file, idfs);
 		test_features.features = standardization(test_features.features);
 		return test_features;
@@ -203,8 +205,10 @@ public class PairwiseLearner extends Learner {
 		attributes.add(new Attribute("header_w"));
 		attributes.add(new Attribute("anchor_w"));
 		attributes.add(new Attribute("bm25_w"));
-		attributes.add(new Attribute("pr"));
-		attributes.add(new Attribute("window"));
+		attributes.add(new Attribute("pr_w"));
+		attributes.add(new Attribute("window_w"));
+		attributes.add(new Attribute("pdf_w"));
+		attributes.add(new Attribute("edu_w"));
 		ArrayList<String> labels = new ArrayList<String>();
 		labels.add("greater");
 		labels.add("lesser");
@@ -221,13 +225,13 @@ public class PairwiseLearner extends Learner {
 						if (doc1.equals(doc2)) continue;
 						int index2 = index_map.get(query).get(doc2);
 						Instance i2 = test_dataset.instance(index2);
-						double[] diff = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};;
-						for (int i = 0; i < 8; i++) {
+						double[] diff = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};;
+						for (int i = 0; i < 10; i++) {
 							diff[i] = i1.value(i) - i2.value(i);
 						}
 						Instance diff_inst = new DenseInstance(1.0, diff);
 						Instances data = new Instances("comp_dataset", attributes, 0);
-						data.setClassIndex(8);
+						data.setClassIndex(10);
 						diff_inst.setDataset(data);
 						if (model.classifyInstance(diff_inst) == 0) rank--;
 					}
