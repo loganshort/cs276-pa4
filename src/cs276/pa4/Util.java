@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 
 public class Util {
+  private static final int CORPUS_SIZE = 98998;
+	
   public static Map<Query,List<Document>> loadTrainData (String feature_file_name) throws Exception {
     Map<Query, List<Document>> result = new HashMap<Query, List<Document>>();
 
@@ -132,6 +134,15 @@ public class Util {
     System.err.println("# Rel file " + rel_file_name + ": number of queries=" + numQuery + ", number of documents=" + numDoc);
     
     return result;
+  }
+  
+  public static Map<String, Double> fixIdfs(Map<String, Double> idfs) {
+	  Map<String, Double> trueIdfs = new HashMap<String, Double>();
+	  for (String term : idfs.keySet()) {
+		  trueIdfs.put(term, Math.log((CORPUS_SIZE*1.0)/idfs.get(term)));
+	  }
+	  trueIdfs.put("DocCount", Math.log(CORPUS_SIZE*1.0));
+	  return trueIdfs;
   }
 
   public static void main(String[] args) {

@@ -19,6 +19,7 @@ import weka.filters.Filter;
 import weka.filters.unsupervised.attribute.Standardize;
 
 public class PairwiseLearner extends Learner {
+  private static final int CORPUS_SIZE = 98998;
   private LibSVM model;
   private static final Map<String, Integer> FIELD_MAP;
   private boolean bm25, pr, window;
@@ -76,6 +77,7 @@ public class PairwiseLearner extends Learner {
 	@Override
 	public Instances extract_train_features(String train_data_file,
 			String train_rel_file, Map<String, Double> idfs) {
+		Map<String, Double> trueIdfs = Util.fixIdfs(idfs);
 		Map<Query,List<Document>> train_data; Map<String, Map<String, Double>> rel_data;
 		BM25Scorer bm25_scorer;
 		SmallestWindowScorer window_scorer;
@@ -84,8 +86,8 @@ public class PairwiseLearner extends Learner {
 			train_data = Util.loadTrainData(train_data_file);
 			/* query -> (url -> score) */
 			rel_data = Util.loadRelData(train_rel_file);
-			bm25_scorer = new BM25Scorer(idfs, train_data);
-			window_scorer = new SmallestWindowScorer(idfs);
+			bm25_scorer = new BM25Scorer(trueIdfs, train_data);
+			window_scorer = new SmallestWindowScorer(trueIdfs);
 		} catch (Exception e) {
 			System.err.println("Error while loading training data: " + e);
 			return null;
@@ -119,7 +121,9 @@ public class PairwiseLearner extends Learner {
 					Map<String, Double> field_tfs = tfs.get(field);
 					for (String term : query.words) {
 						if (idfs.containsKey(term)) {
-							score += idfs.get(term)*field_tfs.get(term)*query_tfs.get(term);
+							score += trueIdfs.get(term)*query_tfs.get(term)*field_tfs.get(term);
+						} else {
+							score += trueIdfs.get("DocCount")*query_tfs.get(term)*field_tfs.get(term);
 						}
 					}
 					instance[FIELD_MAP.get(field)] = score;

@@ -31,6 +31,7 @@ public class Learning2Rank {
 			/* 
 			 * @TODO: Your code here, add more features 
 			 * */
+			learner = new PointwiseLearner(true, true, true);
 			System.err.println("Task 3");
 			
 		} else if (task == 4) {
@@ -65,6 +66,7 @@ public class Learning2Rank {
 				/* 
 				 * @TODO: Your code here, add more features 
 				 * */
+				learner = new PointwiseLearner(true, true, true);
 				System.err.println("Task 3");
 				
 			} else if (task == 4) {

@@ -52,6 +52,8 @@ public class CosineSimilarityScorer extends AScorer {
 			for (String term : q.words) {
 				if (idfs.containsKey(term)) {
 					score += idfs.get(term)*tfQuery.get(term)*weights.get(field)*current.get(term);
+				} else {
+					score += idfs.get("DocCount")*tfQuery.get(term)*weights.get(field)*current.get(term);
 				}
 			}
 		}

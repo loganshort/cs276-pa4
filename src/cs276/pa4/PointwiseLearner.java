@@ -8,13 +8,16 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import weka.classifiers.Classifier;
+import weka.classifiers.evaluation.Evaluation;
 import weka.classifiers.functions.LinearRegression;
 import weka.core.Attribute;
 import weka.core.DenseInstance;
 import weka.core.Instance;
 import weka.core.Instances;
+import weka.core.Utils;
 
 public class PointwiseLearner extends Learner {	
+	private static final int CORPUS_SIZE = 98998;
 	private static final Map<String, Integer> FIELD_MAP;
 	private boolean bm25, pr, window;
     static {
@@ -39,6 +42,7 @@ public class PointwiseLearner extends Learner {
 		/*
 		 * @TODO: Your code here
 		 */
+		Map<String, Double> trueIdfs = Util.fixIdfs(idfs);
 		Map<Query,List<Document>> train_data; Map<String, Map<String, Double>> rel_data;
 		BM25Scorer bm25_scorer;
 		SmallestWindowScorer window_scorer;
@@ -47,8 +51,8 @@ public class PointwiseLearner extends Learner {
 			train_data = Util.loadTrainData(train_data_file);
 			/* query -> (url -> score) */
 			rel_data = Util.loadRelData(train_rel_file);
-			bm25_scorer = new BM25Scorer(idfs, train_data);
-			window_scorer = new SmallestWindowScorer(idfs);
+			bm25_scorer = new BM25Scorer(trueIdfs, train_data);
+			window_scorer = new SmallestWindowScorer(trueIdfs);
 		} catch (Exception e) {
 			System.err.println("Error while loading training data: " + e);
 			return null;
@@ -76,17 +80,19 @@ public class PointwiseLearner extends Learner {
 				double[] instance = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 				Map<String,Map<String, Double>> tfs = doc.getDocTermFreqs(query);
 				for (String field : tfs.keySet()) {
-					double score = 0;
+					double score = 0.0;
 					Map<String, Double> field_tfs = tfs.get(field);
 					for (String term : query.words) {
 						if (idfs.containsKey(term)) {
-							score += idfs.get(term)*query_tfs.get(term)*field_tfs.get(term);
+							score += trueIdfs.get(term)*query_tfs.get(term)*field_tfs.get(term);
+						} else {
+							score += trueIdfs.get("DocCount")*query_tfs.get(term)*field_tfs.get(term);
 						}
 					}
 					instance[FIELD_MAP.get(field)] = score;
 				}
 				if (bm25) instance[5] = bm25_scorer.getSimScore(doc, query);
-				if (window) instance[6] = window_scorer.getSimScore(doc, query);
+				//if (window) instance[6] = window_scorer.getSimScore(doc, query);
 				if (pr) instance[7] = doc.page_rank;
 				instance[dataset.numAttributes() - 1] = rel_data.get(query.toString()).get(doc.url);
 				Instance inst = new DenseInstance(1.0, instance);
@@ -111,6 +117,7 @@ public class PointwiseLearner extends Learner {
 		} catch (Exception e) {
 			System.err.println("Error while training linear regression: " + e);
 		}
+		System.out.println(model);
 		return model;
 	}
 
@@ -120,14 +127,15 @@ public class PointwiseLearner extends Learner {
 		/*
 		 * @TODO: Your code here
 		 */
+		Map<String, Double> trueIdfs = Util.fixIdfs(idfs);
 		Map<Query,List<Document>> test_data;
 		BM25Scorer bm25_scorer;
 		SmallestWindowScorer window_scorer;
 		try {
 			/* query -> documents */
 			test_data = Util.loadTrainData(test_data_file);
-			bm25_scorer = new BM25Scorer(idfs, test_data);
-			window_scorer = new SmallestWindowScorer(idfs);
+			bm25_scorer = new BM25Scorer(trueIdfs, test_data);
+			window_scorer = new SmallestWindowScorer(trueIdfs);
 		} catch (Exception e) {
 			System.err.println("Error while loading training data: " + e);
 			return null;
@@ -162,13 +170,15 @@ public class PointwiseLearner extends Learner {
 					Map<String, Double> field_tfs = tfs.get(field);
 					for (String term : query.words) {
 						if (idfs.containsKey(term)) {
-							score += idfs.get(term)*field_tfs.get(term)*query_tfs.get(term);
+							score += trueIdfs.get(term)*query_tfs.get(term)*field_tfs.get(term);
+						} else {
+							score += trueIdfs.get("DocCount")*query_tfs.get(term)*field_tfs.get(term);
 						}
 					}
 					instance[FIELD_MAP.get(field)] = score;
 				}
 				if (bm25) instance[5] = bm25_scorer.getSimScore(doc, query);
-				if (window) instance[6] = window_scorer.getSimScore(doc, query);
+				//if (window) instance[6] = window_scorer.getSimScore(doc, query);
 				if (pr) instance[7] = doc.page_rank;
 				Instance inst = new DenseInstance(1.0, instance);
 				dataset.add(inst);
@@ -190,7 +200,8 @@ public class PointwiseLearner extends Learner {
 	@Override
 	public Map<String, List<String>> testing(TestFeatures tf,
 			Classifier model) {
-		double eta = 0.000000001;
+		System.out.println(model);
+		double eta = 0.0000000001;
 		Map<String, List<String>> ranked_queries = new HashMap<String, List<String>>();
 		Instances test_dataset = tf.features;
 		Map<String, Map<String, Integer>> index_map = tf.index_map;
@@ -216,7 +227,7 @@ public class PointwiseLearner extends Learner {
 		} catch (Exception e) {
 			System.err.println("Error while classifying test: ");
 			e.printStackTrace();
-		}		
+		}	
 		
 		return ranked_queries;
 	}
