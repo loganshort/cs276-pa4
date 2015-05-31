@@ -16,6 +16,6 @@ task=$5
 # compute NDCG
 echo ""
 echo "# Executing: java -cp bin cs276.pa4.NdcgMain tmp.out.txt $test_rel_file"
-java -cp bin cs276.pa4.NdcgMain tmp.out.txt $test_rel_file
+java -Xmx2g -cp bin cs276.pa4.NdcgMain tmp.out.txt $test_rel_file
 
 rm -rf tmp.out.txt

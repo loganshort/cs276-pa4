@@ -91,7 +91,7 @@ public class Util {
       line = line.trim();
       if(line.equals("")) continue;
       String[] tokens = line.split("\\s+");
-      dfs.put(tokens[0], Double.parseDouble(tokens[1]));
+      dfs.put(tokens[0], Double.parseDouble(tokens[1])/98998.0);
     }
     br.close();
     return dfs;

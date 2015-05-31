@@ -67,10 +67,6 @@ public class PointwiseLearner extends Learner {
 						if (idfs.containsKey(term)) {
 							score += idfs.get(term)*query_tfs.get(term)*field_tfs.get(term);
 						}
-						/*else {
-							//score += idfs.get("DocCount")*query_tfs.get(term)*field_tfs.get(term);
-							score += query_tfs.get(term)*field_tfs.get(term);
-						}*/
 					}
 					instance[FIELD_MAP.get(field)] = score;
 				}
@@ -127,12 +123,12 @@ public class PointwiseLearner extends Learner {
 		attributes.add(new Attribute("header_w"));
 		attributes.add(new Attribute("anchor_w"));
 		attributes.add(new Attribute("relevance_score"));
-		dataset = new Instances("train_dataset", attributes, 0);
+		dataset = new Instances("test_dataset", attributes, 0);
 		
 		int index = 0;
 		for (Query query : test_data.keySet()) {
-			index_map.put(query.toString(), new HashMap<String, Integer>());
 			Map<String,Double> query_tfs = query.getQueryFreqs();
+			index_map.put(query.toString(), new HashMap<String, Integer>());
 			for (Document doc : test_data.get(query)) {	
 				double[] instance = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 				Map<String,Map<String, Double>> tfs = doc.getDocTermFreqs(query);
@@ -141,12 +137,8 @@ public class PointwiseLearner extends Learner {
 					Map<String, Double> field_tfs = tfs.get(field);
 					for (String term : query.words) {
 						if (idfs.containsKey(term)) {
-							score += idfs.get(term)*query_tfs.get(term)*field_tfs.get(term);
+							score += idfs.get(term)*field_tfs.get(term)*query_tfs.get(term);
 						}
-						/*else {
-							//score += idfs.get("DocCount")*query_tfs.get(term)*field_tfs.get(term);
-							score += query_tfs.get(term)*field_tfs.get(term);
-						}*/
 					}
 					instance[FIELD_MAP.get(field)] = score;
 				}
@@ -170,9 +162,6 @@ public class PointwiseLearner extends Learner {
 	@Override
 	public Map<String, List<String>> testing(TestFeatures tf,
 			Classifier model) {
-		/*
-		 * @TODO: Your code here
-		 */
 		double eta = 0.000000001;
 		Map<String, List<String>> ranked_queries = new HashMap<String, List<String>>();
 		Instances test_dataset = tf.features;
