@@ -22,7 +22,7 @@ public class PairwiseLearner extends Learner {
   private static final int CORPUS_SIZE = 98998;
   private LibSVM model;
   private static final Map<String, Integer> FIELD_MAP;
-  private boolean bm25, pr, window;
+  private boolean isLinear, bm25, pr, window;
   static {
       Map<String, Integer> map = new HashMap<String, Integer>();
       map.put("url", 0);
@@ -38,6 +38,7 @@ public class PairwiseLearner extends Learner {
     } catch (Exception e){
       e.printStackTrace();
     }
+    this.isLinear = isLinearKernel;
     this.bm25 = bm25;
 	this.pr = pr;
 	this.window = window;
@@ -52,6 +53,7 @@ public class PairwiseLearner extends Learner {
     } catch (Exception e){
       e.printStackTrace();
     }
+    this.isLinear = isLinearKernel;
     this.bm25 = bm25;
 	this.pr = pr;
 	this.window = window;
@@ -220,7 +222,10 @@ public class PairwiseLearner extends Learner {
 		labels.add("lesser");
 		attributes.add(new Attribute("relevance_score", labels));
 		try {
-			double[] weights = ((LibSVM) model).coefficients();
+			double[] weights = null;
+			if (isLinear) {
+				weights = ((LibSVM) model).coefficients();
+			}
 			for (String query : index_map.keySet()) {
 				TreeMap<Double, String> scoreMap = new TreeMap<Double, String>();
 				ranked_queries.put(query, new ArrayList<String>());
@@ -228,8 +233,25 @@ public class PairwiseLearner extends Learner {
 					double score = 0;
 					int index1 = index_map.get(query).get(doc1);
 					Instance i1 = test_dataset.instance(index1);
-					for (int i = 0; i < weights.length; i++) {
-						score -= i1.value(i)*weights[i];
+					if (isLinear) {
+						for (int i = 0; i < weights.length; i++) {
+							score -= i1.value(i)*weights[i];
+						}
+					} else {
+						for (String doc2 : index_map.get(query).keySet()) {
+							if (doc1.equals(doc2)) continue;
+							int index2 = index_map.get(query).get(doc2);
+							Instance i2 = test_dataset.instance(index2);
+							double[] diff = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};;
+							for (int i = 0; i < 10; i++) {
+								diff[i] = i1.value(i) - i2.value(i);
+							}
+							Instance diff_inst = new DenseInstance(1.0, diff);
+							Instances data = new Instances("comp_dataset", attributes, 0);
+							data.setClassIndex(10);
+							diff_inst.setDataset(data);
+							if (model.classifyInstance(diff_inst) == 0) score--;
+						}
 					}
 					while (scoreMap.containsKey(score)) {
 						score += eta;

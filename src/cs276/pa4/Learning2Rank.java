@@ -14,6 +14,10 @@ import weka.classifiers.Classifier;
 import weka.core.Instances;
 
 public class Learning2Rank {
+	
+	private static final double C = Math.pow(2, 0);
+	private static final double GAMMA = Math.pow(2, -6);
+	private static final boolean isLinearKernel = false;
 
 	
 	public static Classifier train(String train_data_file, String train_rel_file, int task, Map<String,Double> idfs) {
@@ -24,10 +28,7 @@ public class Learning2Rank {
  		if (task == 1) {
 			learner = new PointwiseLearner(false, false, false, false);
 		} else if (task == 2) {
-			boolean isLinearKernel = true;
-			double C = 8;
-			double gamma = 1e-5;
-			learner = new PairwiseLearner(isLinearKernel, false, false, false);
+			learner = new PairwiseLearner(C, GAMMA, isLinearKernel, false, false, false);
 		} else if (task == 3) {
 			learner = new PointwiseLearner(true, true, true, true);
 			System.err.println("Task 3");
@@ -57,10 +58,7 @@ public class Learning2Rank {
 	 		if (task == 1) {
 				learner = new PointwiseLearner(false, false, false, false);
 			} else if (task == 2) {
-				boolean isLinearKernel = true;
-				double C = 8;
-				double gamma = 2e-4;
-				learner = new PairwiseLearner(isLinearKernel, false, false, false);
+				learner = new PairwiseLearner(C, GAMMA, isLinearKernel, false, false, false);
 			} else if (task == 3) {
 
 				/* 
