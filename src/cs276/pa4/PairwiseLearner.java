@@ -149,19 +149,25 @@ public class PairwiseLearner extends Learner {
 					} else {
 						diff[10] = 1;
 					}
-					if (diff[10] == 0 && dataset.get(i).value(10) >= dataset.get(j).value(10) ||
+					boolean create = false;
+					if (diff[10] == 0 && dataset.get(i).value(10) > dataset.get(j).value(10) ||
 						diff[10] == 1 && dataset.get(i).value(10) < dataset.get(j).value(10)) {
+						create = true;
 						for (int k = 0; k < 10; k++) {
 							diff[k] = dataset.get(i).value(k) - dataset.get(j).value(k);
 						}
-					} else {
+					} else if (diff[10] == 0 && dataset.get(i).value(10) < dataset.get(j).value(10) ||
+							diff[10] == 1 && dataset.get(i).value(10) > dataset.get(j).value(10)) {
+						create = true;
 						for (int k = 0; k < 10; k++) {
 							diff[k] = dataset.get(j).value(k) - dataset.get(i).value(k);
 						}
 					}
-					current = !current;
-					Instance diff_inst = new DenseInstance(1.0, diff);
-					pairs.add(diff_inst);
+					if (create) {
+						current = !current;
+						Instance diff_inst = new DenseInstance(1.0, diff);
+						pairs.add(diff_inst);
+					}
 				}
 			}
 			dataset.clear();
@@ -222,7 +228,7 @@ public class PairwiseLearner extends Learner {
 					double score = 0;
 					int index1 = index_map.get(query).get(doc1);
 					Instance i1 = test_dataset.instance(index1);
-					for (int i = 0; i < 5; i++) {
+					for (int i = 0; i < weights.length; i++) {
 						score -= i1.value(i)*weights[i];
 					}
 					while (scoreMap.containsKey(score)) {

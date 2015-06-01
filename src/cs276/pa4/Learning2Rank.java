@@ -93,7 +93,6 @@ public class Learning2Rank {
 	public static void writeRankedResultsToFile(Map<String,List<String>> ranked_queries, PrintStream ps) {
 	    for (String query : ranked_queries.keySet()){
 	      ps.println("query: " + query.toString());
-
 	      for (String url : ranked_queries.get(query)) {
 	        ps.println("  url: " + url);
 	      }
