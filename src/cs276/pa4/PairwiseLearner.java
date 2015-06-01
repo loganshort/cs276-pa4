@@ -214,31 +214,21 @@ public class PairwiseLearner extends Learner {
 		labels.add("lesser");
 		attributes.add(new Attribute("relevance_score", labels));
 		try {
+			double[] weights = ((LibSVM) model).coefficients();
 			for (String query : index_map.keySet()) {
 				TreeMap<Double, String> scoreMap = new TreeMap<Double, String>();
 				ranked_queries.put(query, new ArrayList<String>());
 				for (String doc1 : index_map.get(query).keySet()) {
-					double rank = 0;
+					double score = 0;
 					int index1 = index_map.get(query).get(doc1);
 					Instance i1 = test_dataset.instance(index1);
-					for (String doc2 : index_map.get(query).keySet()) {
-						if (doc1.equals(doc2)) continue;
-						int index2 = index_map.get(query).get(doc2);
-						Instance i2 = test_dataset.instance(index2);
-						double[] diff = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};;
-						for (int i = 0; i < 10; i++) {
-							diff[i] = i1.value(i) - i2.value(i);
-						}
-						Instance diff_inst = new DenseInstance(1.0, diff);
-						Instances data = new Instances("comp_dataset", attributes, 0);
-						data.setClassIndex(10);
-						diff_inst.setDataset(data);
-						if (model.classifyInstance(diff_inst) == 0) rank--;
+					for (int i = 0; i < 5; i++) {
+						score -= i1.value(i)*weights[i];
 					}
-					while (scoreMap.containsKey(rank)) {
-						rank += eta;
+					while (scoreMap.containsKey(score)) {
+						score += eta;
 					}
-					scoreMap.put(rank, doc1);
+					scoreMap.put(score, doc1);
 				}
 				for (int i = 0; i < index_map.get(query).keySet().size(); i++) {
 					ranked_queries.get(query).add(scoreMap.get(scoreMap.firstKey()));
